@@ -1,6 +1,6 @@
-import type { ScanResult, AlgorithmStats } from '../types/index';
+import type { ScanResult, AlgorithmStats, OCRResult } from '../types/index';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers 
 
 function formatTime(ms: number): string {
   if (ms < 0.001) return '< 1 µs';
@@ -13,7 +13,7 @@ function algoClass(algorithm: string): string {
   return algorithm.toLowerCase().replace(/[^a-z]/g, '');
 }
 
-// ─── Render functions ─────────────────────────────────────────────────────────
+// Render
 
 function renderTotalKeywords(total: number): void {
   const el = document.getElementById('total-count')!;
@@ -109,23 +109,44 @@ function render(result: ScanResult | null): void {
   renderTimestamp(result.timestamp);
 }
 
-// ─── Data loading ─────────────────────────────────────────────────────────────
+function renderOCR(result: OCRResult | null): void {
+  const main = document.getElementById('ocr-main')!;
+  const sub = document.getElementById('ocr-sub')!;
+  const count = document.getElementById('ocr-count')!;
+
+  if (!result) {
+    main.textContent = 'Belum ada scan gambar';
+    sub.textContent = '';
+    count.textContent = '—';
+    count.className = 'ocr-count zero';
+    return;
+  }
+
+  main.textContent = `${result.imagesScanned} gambar dipindai`;
+  sub.textContent = result.executionTime > 0 ? `Waktu: ${formatTime(result.executionTime)}` : '';
+  count.textContent = String(result.imagesDetected);
+  count.className = 'ocr-count' + (result.imagesDetected === 0 ? ' zero' : '');
+}
+
+// Data loading
 
 function loadAndRender(): void {
-  chrome.storage.local.get(['scanResult'], (data) => {
+  chrome.storage.local.get(['scanResult', 'ocrResult'], (data) => {
     render((data.scanResult as ScanResult) ?? null);
+    renderOCR((data.ocrResult as OCRResult) ?? null);
   });
 }
 
-// ─── Realtime updates via storage listener ────────────────────────────────────
+// Realtime updates via storage listener
 
 function setupStorageListener(): void {
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local' || !changes.scanResult) return;
-    render(changes.scanResult.newValue as ScanResult);
+    if (area !== 'local') return;
+    if (changes.scanResult) render(changes.scanResult.newValue as ScanResult);
+    if (changes.ocrResult) renderOCR(changes.ocrResult.newValue as OCRResult);
 
     const btn = document.getElementById('rescan-btn') as HTMLButtonElement;
-    if (btn.disabled) {
+    if (changes.scanResult && btn.disabled) {
       btn.disabled = false;
       btn.textContent = 'Rescan Halaman Ini';
       btn.classList.remove('scanning');
@@ -133,7 +154,7 @@ function setupStorageListener(): void {
   });
 }
 
-// ─── Rescan button ────────────────────────────────────────────────────────────
+// Rescan button
 
 function setupRescanButton(): void {
   const btn = document.getElementById('rescan-btn') as HTMLButtonElement;
@@ -160,7 +181,7 @@ function setupRescanButton(): void {
   });
 }
 
-// ─── Bootstrap ────────────────────────────────────────────────────────────────
+// Bootstrap
 
 document.addEventListener('DOMContentLoaded', () => {
   loadAndRender();

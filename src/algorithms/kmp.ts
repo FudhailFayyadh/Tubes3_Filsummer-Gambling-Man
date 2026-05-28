@@ -1,10 +1,5 @@
 import type { MatchResult } from '../types/index';
 
-/**
- * Builds the KMP failure (prefix / border) function for a given pattern.
- * failure[i] = length of the longest proper prefix of pattern[0..i]
- * that is also a suffix.
- */
 export function buildFailureFunction(pattern: string): number[] {
   const m = pattern.length;
   const failure = new Array<number>(m).fill(0);
@@ -23,12 +18,6 @@ export function buildFailureFunction(pattern: string): number[] {
   return failure;
 }
 
-/**
- * Searches for all occurrences of `pattern` in `text` using KMP.
- * Returns every starting position (0-indexed) and the total comparison count.
- *
- * Restrictions: no string.includes / indexOf / built-in search used.
- */
 export function kmpSearch(
   text: string,
   pattern: string,
@@ -44,7 +33,6 @@ export function kmpSearch(
   let comparisons = 0;
 
   for (let i = 0; i < n; i++) {
-    // Each iteration of this inner loop is one character comparison.
     while (true) {
       comparisons++;
       if (pattern[q] === text[i]) {
@@ -55,10 +43,8 @@ export function kmpSearch(
         }
         break;
       } else if (q > 0) {
-        // Mismatch: fall back using the failure function and retry same text[i].
         q = failure[q - 1];
       } else {
-        // q === 0 and still no match; move to next text character.
         break;
       }
     }
@@ -67,11 +53,6 @@ export function kmpSearch(
   return { positions, comparisons };
 }
 
-/**
- * Runs KMP for every keyword in the list against the given text.
- * Performs case-insensitive matching by uppercasing both sides.
- * Returns one MatchResult per keyword that has at least one hit.
- */
 export function kmpSearchAllKeywords(
   text: string,
   keywords: string[],

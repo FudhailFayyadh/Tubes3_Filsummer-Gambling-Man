@@ -2,8 +2,27 @@ import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
 export default defineConfig(({ mode }) => {
+  if (mode === 'ocr') {
+    return {
+      build: {
+        lib: {
+          entry: resolve(__dirname, 'src/content/ocr.ts'),
+          name: 'JudolDetectorOCR',
+          fileName: () => 'ocr.js',
+          formats: ['iife'],
+        },
+        outDir: 'dist',
+        emptyOutDir: false,
+        rollupOptions: {
+          output: {
+            inlineDynamicImports: true,
+          },
+        },
+      },
+    }
+  }
+
   if (mode === 'content') {
-    // Second build pass: content script as self-contained IIFE
     return {
       build: {
         lib: {

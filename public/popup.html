@@ -194,6 +194,43 @@
       text-align: right;
       margin-top: 8px;
     }
+
+    .ocr-box {
+      background: #111128;
+      border: 1px solid #1e1e3a;
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ocr-icon { font-size: 20px; }
+
+    .ocr-text { flex: 1; }
+
+    .ocr-text .ocr-main {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ddd;
+    }
+
+    .ocr-text .ocr-sub {
+      font-size: 11px;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .ocr-count {
+      font-size: 22px;
+      font-weight: 800;
+      color: #e74c3c;
+    }
+
+    .ocr-count.zero { color: #27ae60; }
+
+    .algo-tag.rk { background: #16a085; }
+    .bar-fill.rk { background: linear-gradient(90deg, #1abc9c, #16a085); }
   </style>
 </head>
 <body>
@@ -235,6 +272,18 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">OCR Gambar</div>
+      <div class="ocr-box">
+        <div class="ocr-icon">🖼️</div>
+        <div class="ocr-text">
+          <div class="ocr-main" id="ocr-main">Belum ada scan gambar</div>
+          <div class="ocr-sub" id="ocr-sub"></div>
+        </div>
+        <div class="ocr-count zero" id="ocr-count">—</div>
+      </div>
     </div>
 
     <button id="rescan-btn">Rescan Halaman Ini</button>

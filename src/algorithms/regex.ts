@@ -1,11 +1,4 @@
 import type { MatchResult } from '../types/index';
-
-/**
- * Visual look-alike substitutions.
- * Maps an uppercase letter to a regex character class that also matches
- * common visual replacements used to obfuscate gambling keywords.
- * e.g. "GACOR" → may appear as "G4C0R", "GΑC0R", etc.
- */
 const VISUAL_SUBS: Readonly<Record<string, string>> = {
   A: '[A4@ÀÁÂÃÄÅĀĂĄαΑ]',
   B: '[B8ß]',
@@ -35,18 +28,11 @@ const VISUAL_SUBS: Readonly<Record<string, string>> = {
   Z: '[Z2ŹŻŽζ]',
 };
 
-/**
- * Escapes special regex characters in a literal string.
- */
+
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * Builds a regex pattern string for `keyword` that matches the keyword
- * (case-insensitive, with visual look-alike substitutions) followed by
- * 2–4 digits.  e.g. "GACOR" → "[G6][A4@...][C(...]...\d{2,4}"
- */
 export function buildKeywordPattern(keyword: string): string {
   const parts = keyword
     .toUpperCase()
@@ -56,12 +42,6 @@ export function buildKeywordPattern(keyword: string): string {
   return parts.join('') + '\\d{2,4}';
 }
 
-/**
- * Runs all keyword-based patterns plus a generic catch-all against `text`.
- * Returns one MatchResult per keyword that has at least one hit.
- *
- * Note: JS RegExp engine is permitted per spec.
- */
 export function regexSearch(text: string, keywords: string[]): MatchResult[] {
   const start = performance.now();
   const results: MatchResult[] = [];
@@ -93,8 +73,7 @@ export function regexSearch(text: string, keywords: string[]): MatchResult[] {
     }
   }
 
-  // Generic catch-all: <word of 2+ letters><2-4 digits>
-  // Catches obfuscated gambling terms not covered by keyword list.
+
   const catchAll = /\b([A-Za-zͰ-Ͽ][A-Za-z0-9Ͱ-Ͽ]{1,})\d{2,4}\b/g;
   const catchPositions: number[] = [];
   const catchTerms: string[] = [];

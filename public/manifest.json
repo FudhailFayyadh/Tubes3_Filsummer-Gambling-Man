@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Judol Detector",
   "version": "1.0",
-  "description": "Deteksi konten judi online menggunakan algoritma KMP, Boyer-Moore, dan Regex.",
+  "description": "Deteksi konten judi online menggunakan algoritma KMP, Boyer-Moore, Rabin-Karp, Regex, dan OCR.",
   "permissions": ["storage", "tabs"],
   "host_permissions": ["<all_urls>"],
   "action": {
@@ -13,6 +13,11 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["ocr.js"],
       "run_at": "document_idle"
     }
   ]
