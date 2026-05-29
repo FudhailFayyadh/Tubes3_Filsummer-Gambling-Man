@@ -84,7 +84,8 @@ export function regexSearch(text: string, keywords: string[]): MatchResult[] {
     const word = cm[1].toUpperCase();
     if (!matchedWords.has(word)) {
       catchPositions.push(cm.index);
-      if (!catchTerms.includes(cm[0])) catchTerms.push(cm[0]);
+      const term = cm[0];
+      if (!catchTerms.some((existing) => existing === term)) catchTerms.push(term);
     }
   }
 

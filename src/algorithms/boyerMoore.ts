@@ -1,44 +1,78 @@
 import type { MatchResult } from '../types/index';
 
-// ─── Member 2: implement Boyer-Moore from scratch ────────────────────────────
-//
-// Required components (per spec):
-//   • Last-occurrence table (bad-character heuristic)
-//   • Right-to-left scanning of pattern against text window
-//   • Shifting process using last-occurrence table
-//   • Comparison counting
-//   • NO string.includes / indexOf / built-in search
-//
-// Function signatures below must remain unchanged so content.ts can call them.
+export function buildLastOccurrenceTable(pattern: string): Record<string, number> {
+  const table: Record<string, number> = {};
 
-/**
- * Builds the last-occurrence table for `pattern`.
- * Returns a map from character → last index in pattern (-1 if absent).
- */
-export function buildLastOccurrenceTable(
-  _pattern: string,
-): Record<string, number> {
-  throw new Error('Boyer-Moore buildLastOccurrenceTable — not implemented (Member 2)');
+  for (let i = 0; i < pattern.length; i++) {
+    table[pattern[i]] = i;
+  }
+
+  return table;
 }
 
-/**
- * Searches for all occurrences of `pattern` in `text` using Boyer-Moore.
- * Returns starting positions (0-indexed) and total comparison count.
- */
 export function bmSearch(
-  _text: string,
-  _pattern: string,
+  text: string,
+  pattern: string,
 ): { positions: number[]; comparisons: number } {
-  throw new Error('Boyer-Moore bmSearch — not implemented (Member 2)');
+  const n = text.length;
+  const m = pattern.length;
+
+  if (m === 0 || m > n) return { positions: [], comparisons: 0 };
+
+  const last = buildLastOccurrenceTable(pattern);
+  const positions: number[] = [];
+  let comparisons = 0;
+  let shift = 0;
+
+  while (shift <= n - m) {
+    let j = m - 1;
+
+    while (j >= 0) {
+      comparisons++;
+      if (pattern[j] !== text[shift + j]) break;
+      j--;
+    }
+
+    if (j < 0) {
+      positions.push(shift);
+      shift += 1;
+      continue;
+    }
+
+    const badChar = text[shift + j];
+    const badCharIndex = last[badChar] ?? -1;
+    shift += Math.max(1, j - badCharIndex);
+  }
+
+  return { positions, comparisons };
 }
 
-/**
- * Runs Boyer-Moore for every keyword against the text (case-insensitive).
- * Returns one MatchResult per keyword that has at least one hit.
- */
 export function bmSearchAllKeywords(
-  _text: string,
-  _keywords: string[],
+  text: string,
+  keywords: string[],
 ): MatchResult[] {
-  throw new Error('Boyer-Moore bmSearchAllKeywords — not implemented (Member 2)');
+  const upperText = text.toUpperCase();
+  const results: MatchResult[] = [];
+
+  for (const keyword of keywords) {
+    const pattern = keyword.trim().toUpperCase();
+    if (!pattern) continue;
+
+    const start = performance.now();
+    const { positions, comparisons } = bmSearch(upperText, pattern);
+    const executionTime = performance.now() - start;
+
+    if (positions.length > 0) {
+      results.push({
+        keyword,
+        positions,
+        count: positions.length,
+        algorithm: 'BM',
+        executionTime,
+        comparisons,
+      });
+    }
+  }
+
+  return results;
 }
