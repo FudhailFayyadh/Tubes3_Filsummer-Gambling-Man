@@ -33,6 +33,7 @@ export interface ScanResult {
 
 export interface DetectorSettings {
   blurTextEnabled: boolean;
+  acRkEnabled: boolean;
 }
 
 export interface DetectedElement {

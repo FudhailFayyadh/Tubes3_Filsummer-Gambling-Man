@@ -34,7 +34,7 @@ const algorithms: Array<AlgorithmStats['algorithm']> = ['KMP', 'BM', 'Regex', 'R
 const highlightClass = 'judol-detector-highlight';
 const tooltipClass = 'judol-detector-tooltip';
 const fuzzyThreshold = 0.3;
-const defaultSettings: DetectorSettings = { blurTextEnabled: false };
+const defaultSettings: DetectorSettings = { blurTextEnabled: false, acRkEnabled: true };
 
 const keywords = keywordsRaw
   .split('\n')
@@ -145,11 +145,11 @@ function getFuzzyKeywords(exactKeywords: Set<string>): string[] {
   return result;
 }
 
-function runAlgorithms(text: string): MatchResult[] {
+function runAlgorithms(text: string, settings: DetectorSettings): MatchResult[] {
   const kmpMatches = kmpSearchAllKeywords(text, keywords);
   const bmMatches = bmSearchAllKeywords(text, keywords);
-  const rkMatches = rbSearchAllKeywords(text, keywords);
-  const acMatches = acSearchAllKeywords(text, keywords);
+  const rkMatches = settings.acRkEnabled ? rbSearchAllKeywords(text, keywords) : [];
+  const acMatches = settings.acRkEnabled ? acSearchAllKeywords(text, keywords) : [];
   const regexMatches = regexSearch(text, keywords);
   const exactKeywords = getExactKeywords([...kmpMatches, ...bmMatches, ...rkMatches, ...acMatches]);
   const fuzzyMatches = fuzzySearch(text, getFuzzyKeywords(exactKeywords), fuzzyThreshold);
@@ -400,6 +400,7 @@ function loadSettings(): Promise<DetectorSettings> {
       const saved = data.detectorSettings as Partial<DetectorSettings> | undefined;
       resolve({
         blurTextEnabled: saved?.blurTextEnabled === true,
+        acRkEnabled: saved?.acRkEnabled !== false,
       });
     });
   });
@@ -410,7 +411,7 @@ async function runScan(): Promise<void> {
 
   const settings = await loadSettings();
   const source = collectText();
-  const matches = runAlgorithms(source.text);
+  const matches = runAlgorithms(source.text, settings);
   const ranges = mapMatchesToRanges(source, matches);
 
   renderHighlights(ranges, settings);
@@ -418,7 +419,7 @@ async function runScan(): Promise<void> {
 }
 
 chrome.runtime.onMessage.addListener((message: ContentMessage) => {
-  if (message.type === 'RESCAN' || message.type === 'SET_BLUR_TEXT') {
+  if (message.type === 'RESCAN' || message.type === 'SET_BLUR_TEXT' || message.type === 'SET_AC_RK') {
     runScan();
   }
 });

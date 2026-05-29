@@ -1,6 +1,6 @@
 import type { AlgorithmStats, DetectorSettings, OCRResult, ScanResult } from '../types/index';
 
-const defaultSettings: DetectorSettings = { blurTextEnabled: false };
+const defaultSettings: DetectorSettings = { blurTextEnabled: false, acRkEnabled: true };
 
 function formatTime(ms: number): string {
   if (ms < 0.001) return '< 1 us';
@@ -17,6 +17,7 @@ function getSettings(data: { detectorSettings?: unknown }): DetectorSettings {
   const saved = data.detectorSettings as Partial<DetectorSettings> | undefined;
   return {
     blurTextEnabled: saved?.blurTextEnabled === true,
+    acRkEnabled: saved?.acRkEnabled !== false,
   };
 }
 
@@ -130,8 +131,8 @@ function renderOCR(result: OCRResult | null): void {
 }
 
 function renderSettings(settings: DetectorSettings): void {
-  const toggle = document.getElementById('blur-toggle') as HTMLInputElement;
-  toggle.checked = settings.blurTextEnabled;
+  (document.getElementById('blur-toggle') as HTMLInputElement).checked = settings.blurTextEnabled;
+  (document.getElementById('acrk-toggle') as HTMLInputElement).checked = settings.acRkEnabled;
 }
 
 function loadData(): void {
@@ -142,7 +143,7 @@ function loadData(): void {
   });
 }
 
-function sendMessageToActiveTab(message: { type: 'RESCAN' } | { type: 'SET_BLUR_TEXT'; enabled: boolean }): void {
+function sendMessageToActiveTab(message: { type: 'RESCAN' } | { type: 'SET_BLUR_TEXT'; enabled: boolean } | { type: 'SET_AC_RK'; enabled: boolean }): void {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tabId = tabs[0]?.id;
     if (tabId === undefined) return;
@@ -186,10 +187,28 @@ function setupBlurToggle(): void {
   const toggle = document.getElementById('blur-toggle') as HTMLInputElement;
 
   toggle.addEventListener('change', () => {
-    const settings: DetectorSettings = { blurTextEnabled: toggle.checked };
+    chrome.storage.local.get(['detectorSettings'], (data) => {
+      const current = getSettings(data);
+      const settings: DetectorSettings = { ...current, blurTextEnabled: toggle.checked };
 
-    chrome.storage.local.set({ detectorSettings: settings }, () => {
-      sendMessageToActiveTab({ type: 'SET_BLUR_TEXT', enabled: settings.blurTextEnabled });
+      chrome.storage.local.set({ detectorSettings: settings }, () => {
+        sendMessageToActiveTab({ type: 'SET_BLUR_TEXT', enabled: settings.blurTextEnabled });
+      });
+    });
+  });
+}
+
+function setupAcRkToggle(): void {
+  const toggle = document.getElementById('acrk-toggle') as HTMLInputElement;
+
+  toggle.addEventListener('change', () => {
+    chrome.storage.local.get(['detectorSettings'], (data) => {
+      const current = getSettings(data);
+      const settings: DetectorSettings = { ...current, acRkEnabled: toggle.checked };
+
+      chrome.storage.local.set({ detectorSettings: settings }, () => {
+        sendMessageToActiveTab({ type: 'RESCAN' });
+      });
     });
   });
 }
@@ -199,4 +218,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStorageListener();
   setupRescanButton();
   setupBlurToggle();
+  setupAcRkToggle();
 });
