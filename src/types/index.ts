@@ -2,7 +2,7 @@ export interface MatchResult {
   keyword: string;
   positions: number[];
   count: number;
-  algorithm: 'KMP' | 'BM' | 'Regex' | 'Fuzzy' | 'RK';
+  algorithm: 'KMP' | 'BM' | 'Regex' | 'Fuzzy' | 'RK' | 'AC';
   executionTime: number;
   comparisons?: number;
   isFuzzy?: boolean;
@@ -10,7 +10,7 @@ export interface MatchResult {
 }
 
 export interface AlgorithmStats {
-  algorithm: 'KMP' | 'BM' | 'Regex' | 'Fuzzy' | 'RK';
+  algorithm: 'KMP' | 'BM' | 'Regex' | 'Fuzzy' | 'RK' | 'AC';
   totalMatches: number;
   executionTime: number;
   comparisons: number;
@@ -31,6 +31,10 @@ export interface ScanResult {
   timestamp: number;
 }
 
+export interface DetectorSettings {
+  blurTextEnabled: boolean;
+}
+
 export interface DetectedElement {
   element: Element;
   matches: MatchResult[];
@@ -39,5 +43,6 @@ export interface DetectedElement {
 
 export type ExtensionMessage =
   | { type: 'RESCAN' }
+  | { type: 'SET_BLUR_TEXT'; enabled: boolean }
   | { type: 'SCAN_COMPLETE'; result: ScanResult }
   | { type: 'OCR_COMPLETE'; result: OCRResult };

@@ -90,7 +90,7 @@ export function regexSearch(text: string, keywords: string[]): MatchResult[] {
   }
 
   if (catchPositions.length > 0) {
-    const preview = catchTerms.slice(0, 3).join(', ') + (catchTerms.length > 3 ? '…' : '');
+    const preview = catchTerms.slice(0, 3).join(', ') + (catchTerms.length > 3 ? '...' : '');
     results.push({
       keyword: `(catch-all: ${preview})`,
       positions: catchPositions,

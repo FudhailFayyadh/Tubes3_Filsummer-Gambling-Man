@@ -32,7 +32,6 @@ export function rbSearch(
 
   if (m === 0 || m > n) return { positions: [], comparisons: 0, hashComparisons: 0 };
 
-  // h = BASE^(m-1) mod MOD
   let h = 1;
   for (let i = 0; i < m - 1; i++) h = modMul(h, BASE);
 
@@ -45,7 +44,6 @@ export function rbSearch(
 
   for (let i = 0; i <= n - m; i++) {
     if (i > 0) {
-      // Rolling hash: remove leading char, add new trailing char
       windowHash = modAdd(
         modMul(
           modAdd(windowHash - modMul(charVal(text[i - 1]), h) + MOD, 0),
@@ -57,7 +55,6 @@ export function rbSearch(
 
     hashComparisons++;
     if (windowHash === patternHash) {
-      // Verify to rule out hash collisions
       let match = true;
       for (let j = 0; j < m; j++) {
         comparisons++;

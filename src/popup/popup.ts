@@ -1,110 +1,111 @@
-import type { ScanResult, AlgorithmStats, OCRResult } from '../types/index';
+import type { AlgorithmStats, DetectorSettings, OCRResult, ScanResult } from '../types/index';
 
-// Helpers 
+const defaultSettings: DetectorSettings = { blurTextEnabled: false };
 
 function formatTime(ms: number): string {
-  if (ms < 0.001) return '< 1 µs';
-  if (ms < 1) return `${(ms * 1000).toFixed(0)} µs`;
-  if (ms < 1000) return `${ms.toFixed(3)} ms`;
+  if (ms < 0.001) return '< 1 us';
+  if (ms < 1) return `${(ms * 1000).toFixed(0)} us`;
+  if (ms < 1000) return `${ms.toFixed(2)} ms`;
   return `${(ms / 1000).toFixed(2)} s`;
 }
 
-function algoClass(algorithm: string): string {
-  return algorithm.toLowerCase().replace(/[^a-z]/g, '');
+function getAlgorithmClass(name: string): string {
+  return name.toLowerCase().replace(/[^a-z]/g, '');
 }
 
-// Render
-
-function renderTotalKeywords(total: number): void {
-  const el = document.getElementById('total-count')!;
-  el.textContent = total.toString();
-  el.className = 'total-count' + (total === 0 ? ' zero' : '');
+function getSettings(data: { detectorSettings?: unknown }): DetectorSettings {
+  const saved = data.detectorSettings as Partial<DetectorSettings> | undefined;
+  return {
+    blurTextEnabled: saved?.blurTextEnabled === true,
+  };
 }
 
-function renderBadge(total: number): void {
+function renderTotal(total: number): void {
+  const totalElement = document.getElementById('total-count')!;
   const badge = document.getElementById('status-badge')!;
-  if (total > 0) {
-    badge.textContent = `${total} Terdeteksi`;
-    badge.className = 'badge';
-  } else {
+
+  totalElement.textContent = total.toString();
+  totalElement.className = total === 0 ? 'total-count zero' : 'total-count';
+
+  if (total === 0) {
     badge.textContent = 'Aman';
     badge.className = 'badge safe';
+  } else {
+    badge.textContent = `${total} Terdeteksi`;
+    badge.className = 'badge';
   }
 }
 
-function renderBarChart(stats: AlgorithmStats[]): void {
+function renderChart(stats: AlgorithmStats[]): void {
   const container = document.getElementById('chart-container')!;
 
-  if (!stats.length) {
+  if (stats.length === 0) {
     container.innerHTML = '<div class="empty-state">Belum ada data scan</div>';
     return;
   }
 
-  const maxMatches = Math.max(...stats.map((s) => s.totalMatches), 1);
+  let maxMatches = 1;
+  for (const item of stats) {
+    if (item.totalMatches > maxMatches) maxMatches = item.totalMatches;
+  }
 
-  container.innerHTML = stats
-    .map((s) => {
-      const pct = Math.max((s.totalMatches / maxMatches) * 100, s.totalMatches > 0 ? 4 : 0);
-      const cls = algoClass(s.algorithm);
-      const label = s.totalMatches > 0 ? String(s.totalMatches) : '';
-      return `
-        <div class="bar-row">
-          <div class="bar-label">${s.algorithm}</div>
-          <div class="bar-track">
-            <div class="bar-fill ${cls}" style="width:${pct}%">
-              <span class="bar-value">${label}</span>
-            </div>
-          </div>
-        </div>`;
-    })
-    .join('');
+  let html = '';
+  for (const item of stats) {
+    const width = item.totalMatches === 0 ? 0 : Math.max(4, (item.totalMatches / maxMatches) * 100);
+    const className = getAlgorithmClass(item.algorithm);
+
+    html += `
+      <div class="chart-row">
+        <div class="chart-name">${item.algorithm}</div>
+        <div class="bar">
+          <div class="bar-fill ${className}" style="width:${width}%"></div>
+        </div>
+        <div class="chart-value">${item.totalMatches}</div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
 }
 
 function renderStats(stats: AlgorithmStats[]): void {
-  const tbody = document.getElementById('stats-body')!;
+  const tableBody = document.getElementById('stats-body')!;
 
-  if (!stats.length) {
-    tbody.innerHTML =
-      '<tr><td colspan="4" class="empty-state">Belum ada data</td></tr>';
+  if (stats.length === 0) {
+    tableBody.innerHTML = '<tr><td colspan="4" class="empty-state">Belum ada data</td></tr>';
     return;
   }
 
-  tbody.innerHTML = stats
-    .map((s) => {
-      const cls = algoClass(s.algorithm);
-      const cmp = s.comparisons > 0 ? s.comparisons.toLocaleString('id-ID') : '—';
-      return `
-        <tr>
-          <td><span class="algo-tag ${cls}">${s.algorithm}</span></td>
-          <td>${s.totalMatches}</td>
-          <td>${formatTime(s.executionTime)}</td>
-          <td>${cmp}</td>
-        </tr>`;
-    })
-    .join('');
-}
+  let html = '';
+  for (const item of stats) {
+    const comparisons = item.comparisons > 0 ? item.comparisons.toLocaleString('id-ID') : '-';
 
-function renderTimestamp(ts: number): void {
-  const el = document.getElementById('timestamp')!;
-  if (!ts) {
-    el.textContent = '';
-    return;
+    html += `
+      <tr>
+        <td>${item.algorithm}</td>
+        <td>${item.totalMatches}</td>
+        <td>${formatTime(item.executionTime)}</td>
+        <td>${comparisons}</td>
+      </tr>`;
   }
-  el.textContent = `Terakhir scan: ${new Date(ts).toLocaleTimeString('id-ID')}`;
+
+  tableBody.innerHTML = html;
 }
 
-function render(result: ScanResult | null): void {
-  const badge = document.getElementById('status-badge')!;
+function renderTimestamp(timestamp: number): void {
+  const element = document.getElementById('timestamp')!;
+  element.textContent = timestamp > 0 ? `Terakhir scan: ${new Date(timestamp).toLocaleTimeString('id-ID')}` : '';
+}
 
+function renderScan(result: ScanResult | null): void {
   if (!result) {
+    const badge = document.getElementById('status-badge')!;
     badge.textContent = 'Belum di-scan';
     badge.className = 'badge pending';
     return;
   }
 
-  renderTotalKeywords(result.totalKeywordsFound);
-  renderBadge(result.totalKeywordsFound);
-  renderBarChart(result.algorithmStats);
+  renderTotal(result.totalKeywordsFound);
+  renderChart(result.algorithmStats);
   renderStats(result.algorithmStats);
   renderTimestamp(result.timestamp);
 }
@@ -117,74 +118,85 @@ function renderOCR(result: OCRResult | null): void {
   if (!result) {
     main.textContent = 'Belum ada scan gambar';
     sub.textContent = '';
-    count.textContent = '—';
+    count.textContent = '-';
     count.className = 'ocr-count zero';
     return;
   }
 
   main.textContent = `${result.imagesScanned} gambar dipindai`;
   sub.textContent = result.executionTime > 0 ? `Waktu: ${formatTime(result.executionTime)}` : '';
-  count.textContent = String(result.imagesDetected);
-  count.className = 'ocr-count' + (result.imagesDetected === 0 ? ' zero' : '');
+  count.textContent = result.imagesDetected.toString();
+  count.className = result.imagesDetected === 0 ? 'ocr-count zero' : 'ocr-count';
 }
 
-// Data loading
+function renderSettings(settings: DetectorSettings): void {
+  const toggle = document.getElementById('blur-toggle') as HTMLInputElement;
+  toggle.checked = settings.blurTextEnabled;
+}
 
-function loadAndRender(): void {
-  chrome.storage.local.get(['scanResult', 'ocrResult'], (data) => {
-    render((data.scanResult as ScanResult) ?? null);
+function loadData(): void {
+  chrome.storage.local.get(['scanResult', 'ocrResult', 'detectorSettings'], (data) => {
+    renderScan((data.scanResult as ScanResult) ?? null);
     renderOCR((data.ocrResult as OCRResult) ?? null);
+    renderSettings(getSettings(data));
   });
 }
 
-// Realtime updates via storage listener
+function sendMessageToActiveTab(message: { type: 'RESCAN' } | { type: 'SET_BLUR_TEXT'; enabled: boolean }): void {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tabId = tabs[0]?.id;
+    if (tabId === undefined) return;
+    chrome.tabs.sendMessage(tabId, message);
+  });
+}
 
 function setupStorageListener(): void {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
-    if (changes.scanResult) render(changes.scanResult.newValue as ScanResult);
-    if (changes.ocrResult) renderOCR(changes.ocrResult.newValue as OCRResult);
 
-    const btn = document.getElementById('rescan-btn') as HTMLButtonElement;
-    if (changes.scanResult && btn.disabled) {
-      btn.disabled = false;
-      btn.textContent = 'Rescan Halaman Ini';
-      btn.classList.remove('scanning');
+    if (changes.scanResult) renderScan(changes.scanResult.newValue as ScanResult);
+    if (changes.ocrResult) renderOCR(changes.ocrResult.newValue as OCRResult);
+    if (changes.detectorSettings) renderSettings(getSettings({ detectorSettings: changes.detectorSettings.newValue }));
+
+    const button = document.getElementById('rescan-btn') as HTMLButtonElement;
+    if (changes.scanResult && button.disabled) {
+      button.disabled = false;
+      button.textContent = 'Rescan Halaman Ini';
     }
   });
 }
 
-// Rescan button
-
 function setupRescanButton(): void {
-  const btn = document.getElementById('rescan-btn') as HTMLButtonElement;
+  const button = document.getElementById('rescan-btn') as HTMLButtonElement;
 
-  btn.addEventListener('click', () => {
-    btn.disabled = true;
-    btn.textContent = 'Scanning...';
-    btn.classList.add('scanning');
+  button.addEventListener('click', () => {
+    button.disabled = true;
+    button.textContent = 'Scanning...';
+    sendMessageToActiveTab({ type: 'RESCAN' });
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tabId = tabs[0]?.id;
-      if (tabId !== undefined) {
-        chrome.tabs.sendMessage(tabId, { type: 'RESCAN' });
-      }
-    });
-
-    // Re-enable after 5 s as a safety fallback (storage listener re-enables sooner).
     setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = 'Rescan Halaman Ini';
-      btn.classList.remove('scanning');
-      loadAndRender();
+      button.disabled = false;
+      button.textContent = 'Rescan Halaman Ini';
+      loadData();
     }, 5000);
   });
 }
 
-// Bootstrap
+function setupBlurToggle(): void {
+  const toggle = document.getElementById('blur-toggle') as HTMLInputElement;
+
+  toggle.addEventListener('change', () => {
+    const settings: DetectorSettings = { blurTextEnabled: toggle.checked };
+
+    chrome.storage.local.set({ detectorSettings: settings }, () => {
+      sendMessageToActiveTab({ type: 'SET_BLUR_TEXT', enabled: settings.blurTextEnabled });
+    });
+  });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadAndRender();
-  setupRescanButton();
+  loadData();
   setupStorageListener();
+  setupRescanButton();
+  setupBlurToggle();
 });

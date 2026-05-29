@@ -117,9 +117,7 @@ async function runOCR(): Promise<void> {
         blurImage(img);
         detectedImages.push({ src: img.src, keywords: found });
       }
-    } catch {
-      // skip unprocessable images
-    }
+    } catch {}
   }
 
   await worker.terminate();

@@ -5,259 +5,256 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Judol Detector</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
-      width: 380px;
-      background: #0d0d1a;
-      color: #e0e0e0;
-      font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
-      font-size: 13px;
+      width: 400px;
+      background: #101827;
+      color: #f8fafc;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    .popup {
+      padding: 16px;
     }
 
     .header {
-      background: linear-gradient(135deg, #1a1a3e, #2d1b69);
-      padding: 14px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid #2a2a4a;
+      margin-bottom: 14px;
     }
 
-    .header h1 {
-      font-size: 15px;
+    .title {
+      font-size: 24px;
       font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.3px;
     }
 
     .badge {
-      background: #e74c3c;
-      color: #fff;
-      padding: 2px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .badge.safe    { background: #27ae60; }
-    .badge.pending { background: #f39c12; }
-
-    .content { padding: 14px 16px; }
-
-    .section { margin-bottom: 16px; }
-
-    .section-title {
-      font-size: 10px;
+      padding: 7px 12px;
+      border-radius: 18px;
+      background: #ef4444;
+      color: #ffffff;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #666;
-      margin-bottom: 8px;
     }
 
-    /* ── Total count ── */
+    .badge.safe {
+      background: #22c55e;
+    }
+
+    .badge.pending {
+      background: #f59e0b;
+    }
+
+    .card {
+      background: #162033;
+      border: 1px solid #2f3b52;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
     .total-count {
-      font-size: 42px;
-      font-weight: 800;
-      color: #e74c3c;
+      font-size: 44px;
       line-height: 1;
-      margin-bottom: 3px;
+      font-weight: 800;
+      color: #ef4444;
+      margin-bottom: 6px;
     }
 
-    .total-count.zero { color: #27ae60; }
-
-    .total-label { font-size: 11px; color: #666; }
-
-    /* ── Bar chart ── */
-    .bar-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 7px;
+    .total-count.zero {
+      color: #22c55e;
     }
 
-    .bar-label {
-      width: 54px;
-      font-size: 11px;
-      font-weight: 600;
-      color: #aaa;
-      flex-shrink: 0;
-      text-align: right;
+    .muted {
+      color: #aab4c4;
     }
 
-    .bar-track {
-      flex: 1;
-      height: 20px;
-      background: #1a1a2e;
-      border-radius: 4px;
-      overflow: hidden;
-      position: relative;
+    .chart {
+      display: grid;
+      gap: 10px;
     }
 
-    .bar-fill {
-      height: 100%;
-      border-radius: 4px;
-      min-width: 2px;
-      display: flex;
-      align-items: center;
-      padding-left: 6px;
-      transition: width 0.35s ease;
-    }
-
-    .bar-fill.kmp   { background: linear-gradient(90deg, #2980b9, #3498db); }
-    .bar-fill.bm    { background: linear-gradient(90deg, #8e44ad, #9b59b6); }
-    .bar-fill.regex { background: linear-gradient(90deg, #d35400, #e67e22); }
-    .bar-fill.fuzzy { background: linear-gradient(90deg, #27ae60, #2ecc71); }
-
-    .bar-value {
-      font-size: 10px;
-      font-weight: 700;
-      color: #fff;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    }
-
-    /* ── Stats table ── */
-    .stats-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-    }
-
-    .stats-table th {
-      color: #555;
-      font-weight: 600;
-      text-align: left;
-      padding: 4px 6px;
-      border-bottom: 1px solid #1e1e3a;
-    }
-
-    .stats-table td {
-      padding: 5px 6px;
-      border-bottom: 1px solid #141426;
-      color: #ccc;
-    }
-
-    .stats-table tbody tr:hover td { background: #161630; }
-
-    .algo-tag {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 3px;
-      font-size: 10px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .algo-tag.kmp   { background: #2980b9; }
-    .algo-tag.bm    { background: #8e44ad; }
-    .algo-tag.regex { background: #d35400; }
-    .algo-tag.fuzzy { background: #27ae60; }
-
-    .empty-state {
-      text-align: center;
-      color: #444;
-      padding: 12px 0;
-      font-size: 12px;
-    }
-
-    /* ── Rescan button ── */
-    #rescan-btn {
-      width: 100%;
-      padding: 9px;
-      background: linear-gradient(135deg, #2980b9, #3498db);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s;
-      margin-top: 4px;
-    }
-
-    #rescan-btn:hover   { opacity: 0.88; }
-    #rescan-btn:active  { opacity: 0.75; }
-    #rescan-btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      background: #555;
-    }
-
-    #rescan-btn.scanning {
-      background: linear-gradient(135deg, #d35400, #e67e22);
-    }
-
-    .timestamp {
-      font-size: 10px;
-      color: #333;
-      text-align: right;
-      margin-top: 8px;
-    }
-
-    .ocr-box {
-      background: #111128;
-      border: 1px solid #1e1e3a;
-      border-radius: 6px;
-      padding: 8px 10px;
-      display: flex;
+    .chart-row {
+      display: grid;
+      grid-template-columns: 58px 1fr 34px;
       align-items: center;
       gap: 10px;
     }
 
-    .ocr-icon { font-size: 20px; }
-
-    .ocr-text { flex: 1; }
-
-    .ocr-text .ocr-main {
-      font-size: 13px;
-      font-weight: 600;
-      color: #ddd;
+    .chart-name {
+      font-weight: 700;
     }
 
-    .ocr-text .ocr-sub {
-      font-size: 11px;
-      color: #555;
-      margin-top: 2px;
+    .bar {
+      height: 10px;
+      background: #334155;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      min-width: 4px;
+      border-radius: 999px;
+    }
+
+    .chart-value {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    .kmp { background: #3b82f6; }
+    .bm { background: #8b5cf6; }
+    .regex { background: #f97316; }
+    .rk { background: #14b8a6; }
+    .ac { background: #ef4444; }
+    .fuzzy { background: #22c55e; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 8px 4px;
+      border-bottom: 1px solid #2f3b52;
+      text-align: left;
+    }
+
+    th {
+      color: #aab4c4;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .toggle-row,
+    .ocr-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+      background: #475569;
+      border-radius: 999px;
+    }
+
+    .toggle-slider::before {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: #ffffff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background: #ef4444;
+    }
+
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translateX(20px);
     }
 
     .ocr-count {
-      font-size: 22px;
+      font-size: 28px;
       font-weight: 800;
-      color: #e74c3c;
+      color: #ef4444;
     }
 
-    .ocr-count.zero { color: #27ae60; }
+    .ocr-count.zero {
+      color: #22c55e;
+    }
 
-    .algo-tag.rk { background: #16a085; }
-    .bar-fill.rk { background: linear-gradient(90deg, #1abc9c, #16a085); }
+    #rescan-btn {
+      width: 100%;
+      padding: 12px;
+      border: 0;
+      border-radius: 8px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #rescan-btn:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
+
+    .timestamp {
+      margin-top: 10px;
+      text-align: right;
+      color: #768399;
+      font-size: 12px;
+    }
+
+    .empty-state {
+      color: #768399;
+      text-align: center;
+      padding: 8px;
+    }
   </style>
 </head>
 <body>
+  <main class="popup">
+    <header class="header">
+      <h1 class="title">Judol Detector</h1>
+      <span class="badge pending" id="status-badge">Memuat</span>
+    </header>
 
-  <div class="header">
-    <h1>🎰 Judol Detector</h1>
-    <span class="badge pending" id="status-badge">Memuat...</span>
-  </div>
-
-  <div class="content">
-
-    <div class="section">
-      <div class="section-title">Total Keyword Terdeteksi</div>
+    <section class="card">
+      <div class="card-title">Total Keyword Terdeteksi</div>
       <div class="total-count zero" id="total-count">0</div>
-      <div class="total-label">keyword judi ditemukan di halaman ini</div>
-    </div>
+      <div class="muted">keyword judi ditemukan di halaman ini</div>
+    </section>
 
-    <div class="section">
-      <div class="section-title">Perbandingan Algoritma</div>
-      <div id="chart-container">
+    <section class="card">
+      <div class="card-title">Perbandingan Algoritma</div>
+      <div class="chart" id="chart-container">
         <div class="empty-state">Belum ada data scan</div>
       </div>
-    </div>
+    </section>
 
-    <div class="section">
-      <div class="section-title">Statistik Eksekusi</div>
-      <table class="stats-table">
+    <section class="card">
+      <div class="card-title">Statistik Eksekusi</div>
+      <table>
         <thead>
           <tr>
             <th>Algoritma</th>
@@ -272,25 +269,35 @@
           </tr>
         </tbody>
       </table>
-    </div>
+    </section>
 
-    <div class="section">
-      <div class="section-title">OCR Gambar</div>
-      <div class="ocr-box">
-        <div class="ocr-icon">🖼️</div>
-        <div class="ocr-text">
-          <div class="ocr-main" id="ocr-main">Belum ada scan gambar</div>
-          <div class="ocr-sub" id="ocr-sub"></div>
+    <section class="card">
+      <div class="toggle-row">
+        <div>
+          <div class="card-title">Sensor Teks</div>
+          <div class="muted">Blur teks terdeteksi</div>
         </div>
-        <div class="ocr-count zero" id="ocr-count">—</div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="blur-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
       </div>
-    </div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">OCR Gambar</div>
+      <div class="ocr-row">
+        <div>
+          <div id="ocr-main">Belum ada scan gambar</div>
+          <div class="muted" id="ocr-sub"></div>
+        </div>
+        <div class="ocr-count zero" id="ocr-count">-</div>
+      </div>
+    </section>
 
     <button id="rescan-btn">Rescan Halaman Ini</button>
-
     <div class="timestamp" id="timestamp"></div>
-
-  </div>
+  </main>
 
   <script src="popup.js"></script>
 </body>
